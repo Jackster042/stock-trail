@@ -14,15 +14,14 @@ import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { LogOut } from "lucide-react";
 import NavItems from "./NavItems";
+import { signOut } from "@/lib/actions/auth.actions";
 
-const UserDropdown = () => {
+const UserDropdown = ({ user }: { user: User }) => {
   const router = useRouter();
 
-  const handleSignOut = async () => router.push("/sign-in");
-
-  const user = {
-    name: "Pera",
-    email: "pera@gamil.com",
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/sign-in");
   };
 
   return (
