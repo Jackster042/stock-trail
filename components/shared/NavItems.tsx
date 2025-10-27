@@ -27,14 +27,6 @@ const NavItems = ({
               <SearchCommand
                 renderAs="text"
                 label="Search"
-                // initialStocks={[
-                //   {
-                //     symbol: "AAPL",
-                //     name: "Apple",
-                //     exchange: "NASDAQ",
-                //     type: "stock",
-                //   },
-                // ]}
                 initialStocks={initialStocks}
               />
             </li>

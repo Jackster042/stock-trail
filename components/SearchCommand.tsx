@@ -22,14 +22,15 @@ export default function SearchCommand({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
-  const [stocks, setStocks] =
-    useState<StockWithWatchlistStatus[]>(initialStocks);
+  const [stocks, setStocks] = useState<StockWithWatchlistStatus[]>(
+    initialStocks || []
+  );
 
   const isSearchMode = !!search.trim();
   const displayStocks = isSearchMode ? stocks : stocks?.slice(0, 10);
 
   const handleSearch = async () => {
-    if (!search) return setStocks(initialStocks);
+    if (!search) return setStocks(initialStocks || []);
 
     setLoading(true);
     try {
@@ -49,7 +50,7 @@ export default function SearchCommand({
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.metaKey || (e.ctrlKey && e.key.toLocaleLowerCase() === "k")) {
+      if (e.metaKey || (e.ctrlKey && e.key.toLowerCase() === "k")) {
         e.preventDefault();
         setOpen((v) => !v);
       }
@@ -61,7 +62,7 @@ export default function SearchCommand({
   const handleSelectStock = () => {
     setOpen(false);
     setSearch("");
-    setStocks(initialStocks);
+    setStocks(initialStocks || []);
   };
 
   return (
