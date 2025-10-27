@@ -152,6 +152,11 @@ declare global {
     alertData: Alert[] | undefined;
   };
 
+  type UserForNewsEmail = {
+    name: string;
+    email: string;
+  };
+
   type MarketNewsArticle = {
     id: number;
     headline: string;
