@@ -3,8 +3,16 @@ import Link from "next/link";
 import React from "react";
 import NavItems from "./NavItems";
 import UserDropdown from "./UserDropdown";
+import { searchStocks } from "@/lib/actions/finnhub.actions";
 
-const Header = ({ user }: { user: User }) => {
+const Header = async ({ user }: { user: User }) => {
+  let initialStocks: StockWithWatchlistStatus[] = [];
+  try {
+    initialStocks = await searchStocks();
+  } catch (error) {
+    console.error("Failed to fetch initial stocks:", error);
+  }
+
   return (
     <div className="sticky top-0 header">
       <div className="container header-wrapper">
@@ -18,9 +26,9 @@ const Header = ({ user }: { user: User }) => {
           />
         </Link>
         <nav className="hidden sm:block">
-          <NavItems />
+          <NavItems initialStocks={initialStocks} />
         </nav>
-        <UserDropdown user={user} />
+        <UserDropdown user={user} initialStocks={initialStocks} />
       </div>
     </div>
   );
