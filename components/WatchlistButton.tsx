@@ -1,6 +1,15 @@
 "use client";
 import React, { useMemo, useState } from "react";
 
+interface WatchlistButtonProps {
+  symbol: string;
+  company: string;
+  isInWatchlist: boolean;
+  showTrashIcon?: boolean;
+  type?: "button" | "icon";
+  onWatchlistChange?: (symbol: string, added: boolean) => void;
+}
+
 const WatchlistButton = ({
   symbol,
   company,
