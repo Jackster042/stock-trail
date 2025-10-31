@@ -38,6 +38,8 @@ export async function getWatchlistSymbolsByEmail(
 
 export async function addToWatchlist(symbol: string, company: string) {
   try {
+    await dbConnect();
+
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) redirect("/sign-in");
 
@@ -73,6 +75,7 @@ export async function addToWatchlist(symbol: string, company: string) {
 
 export async function removeFromWatchlist(symbol: string) {
   try {
+    await dbConnect();
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) redirect("/sign-in");
 
@@ -94,6 +97,8 @@ export async function removeFromWatchlist(symbol: string) {
 
 export async function getUserWatchlist() {
   try {
+    await dbConnect();
+
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) redirect("/sign-in");
 
@@ -109,6 +114,8 @@ export async function getUserWatchlist() {
 
 export const getWatchlistWithData = async () => {
   try {
+    await dbConnect();
+
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) redirect("/sign-in");
 

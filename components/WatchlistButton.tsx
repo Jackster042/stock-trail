@@ -60,7 +60,6 @@ const WatchlistButton = ({
       setAdded(prev);
       toast.error("Unable to update watchlist", { description: String(error) });
       console.error(`Error toggling watchlist for ${symbol}`, error);
-      throw new Error(`Failed to toggle watchlist for ${symbol}`);
     }
 
     // const result = added
