@@ -2,7 +2,18 @@
 
 import { cache } from "react";
 import { POPULAR_STOCK_SYMBOLS } from "../constants";
-import { formatArticle, getDateRange, validateArticle } from "../utils";
+import {
+  formatArticle,
+  formatChangePercent,
+  formatMarketCapValue,
+  formatPrice,
+  getDateRange,
+  validateArticle,
+} from "../utils";
+import { auth } from "../better-auth/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { getWatchlistSymbolsByEmail } from "./watchlist.actions";
 
 // TODO: NOTE IF THIS DOESN'T WORK
 // const FINNHUB_BASE_URL = process.env.FINNHUB_BASE_URL ?? "";
@@ -115,6 +126,13 @@ export async function getNews(
 export const searchStocks = cache(
   async (query?: string): Promise<StockWithWatchlistStatus[]> => {
     try {
+      const session = await auth.api.getSession({ headers: await headers() });
+      if (!session?.user) redirect("/sign-in");
+
+      const userWatchlistSymbols = await getWatchlistSymbolsByEmail(
+        session.user.email
+      );
+
       const token =
         process.env.FINNHUB_API_KEY ?? process.env.NEXT_PUBLIC_FINNHUB_API_KEY;
       if (!token) {
@@ -193,7 +211,9 @@ export const searchStocks = cache(
             name,
             exchange,
             type,
-            isInWatchlist: false,
+            isInWatchlist: userWatchlistSymbols.includes(
+              r.symbol.toUpperCase()
+            ),
           };
           return item;
         })
@@ -206,3 +226,49 @@ export const searchStocks = cache(
     }
   }
 );
+
+export const getStockDetails = cache(async (symbol: string) => {
+  const cleanSymbol = symbol.trim().toUpperCase();
+
+  try {
+    const [quote, profile, financials] = await Promise.all([
+      fetchJSON(
+        `${process.env.FINNHUB_BASE_URL}/quote?symbol=${cleanSymbol}&token=${process.env.NEXT_PUBLIC_FINNHUB_API_KEY}`
+      ),
+      fetchJSON(
+        `${process.env.FINNHUB_BASE_URL}/stock/profile2?symbol=${cleanSymbol}&token=${process.env.NEXT_PUBLIC_FINNHUB_API_KEY}`,
+        3600
+      ),
+      fetchJSON(
+        `${process.env.FINNHUB_BASE_URL}/stock/metric?symbol=${cleanSymbol}&metric=all&token=${process.env.NEXT_PUBLIC_FINNHUB_API_KEY}`,
+        1800
+      ),
+    ]);
+
+    const quoteData = quote as QuoteData;
+    const profileData = profile as ProfileData;
+    const financialsData = financials as FinancialsData;
+
+    if (!quoteData?.c || !profileData?.name)
+      throw new Error("Invalid stock data received from API");
+
+    const changePercent = quoteData.dp || 0;
+    const peRatio = financialsData?.metric?.peNormalizedAnnual || null;
+
+    return {
+      symbol: cleanSymbol,
+      company: profileData?.name,
+      currentPrice: quoteData.c,
+      changePercent,
+      priceFormatted: formatPrice(quoteData.c),
+      changeFormatted: formatChangePercent(changePercent),
+      peRatio: peRatio?.toFixed(1) || "—",
+      marketCapFormatted: formatMarketCapValue(
+        profileData?.marketCapitalization || 0
+      ),
+    };
+  } catch (error) {
+    console.error(`Error fetching stock details for ${cleanSymbol}:`, error);
+    throw new Error("Failed to fetch stock details");
+  }
+});

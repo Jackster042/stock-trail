@@ -8,11 +8,12 @@ import {
   CommandItem,
 } from "./ui/command";
 import { CommandEmpty, CommandList } from "cmdk";
-import { Loader2, TrendingUp } from "lucide-react";
+import { Loader2, Star, TrendingUp } from "lucide-react";
 import { Button } from "./ui/button";
 import { useDebounce } from "@/hooks/useDebounce";
 import Link from "next/link";
 import { searchStocks } from "@/lib/actions/finnhub.actions";
+import WatchlistButton from "./WatchlistButton";
 
 export default function SearchCommand({
   renderAs = "button",
@@ -65,6 +66,16 @@ export default function SearchCommand({
     setStocks(initialStocks || []);
   };
 
+  const handleWatchlistChange = async (symbol: string, isAdded: boolean) => {
+    setStocks(
+      initialStocks?.map((stock) =>
+        stock.symbol === symbol
+          ? { ...stock, isInWatchlist: isAdded }
+          : stock || []
+      )
+    );
+  };
+
   return (
     <>
       {renderAs === "text" ? (
@@ -107,7 +118,7 @@ export default function SearchCommand({
                 {` `}({displayStocks?.length || 0})
               </div>
               {displayStocks?.map((stock, i) => (
-                <li key={stock.symbol} className="search-item">
+                <li key={`${stock.symbol}-${i}`} className="search-item">
                   <Link
                     href={`/stocks/${stock.symbol}`}
                     onClick={handleSelectStock}
@@ -120,7 +131,13 @@ export default function SearchCommand({
                         {stock.symbol} | {stock.exchange} | {stock.type}
                       </div>
                     </div>
-                    {/*<Star />*/}
+                    <WatchlistButton
+                      symbol={stock.symbol}
+                      company={stock.name}
+                      isInWatchlist={stock.isInWatchlist}
+                      onWatchlistChange={handleWatchlistChange}
+                      type="icon"
+                    />
                   </Link>
                 </li>
               ))}
