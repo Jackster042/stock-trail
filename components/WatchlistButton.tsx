@@ -33,21 +33,51 @@ const WatchlistButton = ({
   }, [added, type]);
 
   const toggleWatchlist = async () => {
-    const result = added
-      ? await removeFromWatchlist(symbol)
-      : await addToWatchlist(symbol, company);
+    const prev = added;
+    const next = !prev;
 
-    if (result.success) {
+    try {
+      const result = prev
+        ? await removeFromWatchlist(symbol)
+        : await addToWatchlist(symbol, company);
+
+      if (!result.success) {
+        setAdded(prev);
+        toast.error(result.message ?? "Unable to update watchlist");
+        return;
+      }
+
       toast.success(
-        added ? "Stock removed from watchlist" : "Stock added to watchlist",
+        prev ? "Stock removed from watchlist" : "Stock added to watchlist",
         {
           description: `${company} ${
-            added ? "removed" : "added"
+            prev ? "removed" : "added"
           } from watchlist`,
         }
       );
+      onWatchlistChange?.(symbol, next);
+    } catch (error) {
+      setAdded(prev);
+      toast.error("Unable to update watchlist", { description: String(error) });
+      console.error(`Error toggling watchlist for ${symbol}`, error);
+      throw new Error(`Failed to toggle watchlist for ${symbol}`);
     }
-    onWatchlistChange?.(symbol, !added);
+
+    // const result = added
+    //   ? await removeFromWatchlist(symbol)
+    //   : await addToWatchlist(symbol, company);
+
+    // if (result.success) {
+    //   toast.success(
+    //     added ? "Stock removed from watchlist" : "Stock added to watchlist",
+    //     {
+    //       description: `${company} ${
+    //         added ? "removed" : "added"
+    //       } from watchlist`,
+    //     }
+    //   );
+    // }
+    // onWatchlistChange?.(symbol, !added);
   };
 
   const debounceToggle = useDebounce(toggleWatchlist, 500);

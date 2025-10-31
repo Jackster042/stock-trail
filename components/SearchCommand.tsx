@@ -66,15 +66,15 @@ export default function SearchCommand({
     setStocks(initialStocks || []);
   };
 
-  // const handleWatchlistChange = async (symbol: string, isAdded: boolean) => {
-  //   setStocks(
-  //     initialStocks?.map((stock) =>
-  //       stock.symbol === symbol
-  //         ? { ...stock, isInWatchlist: isAdded }
-  //         : stock || []
-  //     )
-  //   );
-  // };
+  const handleWatchlistChange = async (symbol: string, isAdded: boolean) => {
+    setStocks(
+      initialStocks?.map((stock) =>
+        stock.symbol === symbol
+          ? { ...stock, isInWatchlist: isAdded }
+          : stock || []
+      )
+    );
+  };
 
   return (
     <>
@@ -131,13 +131,13 @@ export default function SearchCommand({
                         {stock.symbol} | {stock.exchange} | {stock.type}
                       </div>
                     </div>
-                    {/* <WatchlistButton
+                    <WatchlistButton
                       symbol={stock.symbol}
                       company={stock.name}
                       isInWatchlist={stock.isInWatchlist}
                       onWatchlistChange={handleWatchlistChange}
-                    /> */}
-                    <Star className="h-4 w-4 text-gray-500" />
+                      type="icon"
+                    />
                   </Link>
                 </li>
               ))}
