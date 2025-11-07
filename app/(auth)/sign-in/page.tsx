@@ -28,8 +28,13 @@ const SignIn = () => {
   ) => {
     try {
       const response = await signInWithEmail(data);
-      if (response.success) router.push("/");
-      toast.success("Successfully signed in!");
+      console.log(response, "RESPONSE FROM SIGN IN");
+      if (!response.success) {
+        toast.error(response.message);
+      } else {
+        router.push("/");
+        toast.success("Successfully signed in!");
+      }
     } catch (error) {
       console.error(error);
       toast.error("Something went wrong!", {

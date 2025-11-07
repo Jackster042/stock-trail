@@ -57,6 +57,7 @@ export const signInWithEmail = async ({ email, password }: SignInFormData) => {
         password,
       },
     });
+
     return {
       success: true,
       data: response,
