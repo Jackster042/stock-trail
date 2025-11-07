@@ -47,14 +47,16 @@ const WatchlistButton = ({
         return;
       }
 
-      toast.success(
-        prev ? "Stock removed from watchlist" : "Stock added to watchlist",
-        {
-          description: `${company} ${
-            prev ? "removed" : "added"
-          } from watchlist`,
-        }
-      );
+      if (prev) {
+        toast.error("Stock removed from watchlist", {
+          description: `${company} ${"removed"} from watchlist`,
+        });
+      } else {
+        toast.success("Stock added to watchlist", {
+          description: `${company} ${"added"} to watchlist`,
+        });
+      }
+
       onWatchlistChange?.(symbol, next);
     } catch (error) {
       setAdded(prev);

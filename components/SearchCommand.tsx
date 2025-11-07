@@ -1,12 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  CommandDialog,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "./ui/command";
+import { CommandDialog, CommandInput } from "./ui/command";
 import { CommandEmpty, CommandList } from "cmdk";
 import { Loader2, Star, TrendingUp } from "lucide-react";
 import { Button } from "./ui/button";
@@ -60,10 +55,8 @@ export default function SearchCommand({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  // TODO:
   useEffect(() => {
     if (open) {
-      // whenever dialog reopens, refresh with updated watchlist status
       (async () => {
         try {
           const updated = await searchStocks(search.trim() || ""); // or pass empty for popular
