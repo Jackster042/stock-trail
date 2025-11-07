@@ -60,6 +60,19 @@ export default function SearchCommand({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  // TODO:
+  useEffect(() => {
+    if (open) {
+      // whenever dialog reopens, refresh with updated watchlist status
+      (async () => {
+        try {
+          const updated = await searchStocks(search.trim() || ""); // or pass empty for popular
+          setStocks(updated);
+        } catch {}
+      })();
+    }
+  }, [open]);
+
   const handleSelectStock = () => {
     setOpen(false);
     setSearch("");
@@ -102,7 +115,7 @@ export default function SearchCommand({
           />
           {loading && <Loader2 className="search-loader" />}
         </div>
-        <CommandList className="search-list">
+        <CommandList className="search-list overflow-y-auto max-h-[400px] scrollbar-hide-default rounded-lg border border-gray-600 bg-gray-800">
           {loading ? (
             <CommandEmpty className="search-list-empty">
               Loading stocks ...
