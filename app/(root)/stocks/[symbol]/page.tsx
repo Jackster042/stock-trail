@@ -1,7 +1,6 @@
 import TradingViewWidget from "@/components/TradingViewWidget";
 import WatchlistButton from "@/components/WatchlistButton";
 import { WatchListItem } from "@/database/models/watchlist.model";
-import { getStockDetails } from "@/lib/actions/finnhub.actions";
 import { getUserWatchlist } from "@/lib/actions/watchlist.actions";
 import {
   BASELINE_WIDGET_CONFIG,
@@ -16,7 +15,6 @@ export default async function StockDetails({ params }: StockDetailsPageProps) {
   const { symbol } = await params;
   const scriptUrl = `https://s3.tradingview.com/external-embedding/embed-widget-`;
 
-  const stockData = await getStockDetails(symbol);
   const watchlist = await getUserWatchlist();
 
   const isInWatchlist = watchlist.some(

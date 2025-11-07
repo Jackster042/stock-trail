@@ -28,7 +28,6 @@ const SignIn = () => {
   ) => {
     try {
       const response = await signInWithEmail(data);
-      console.log(response, "RESPONSE FROM SIGN IN");
       if (!response.success) {
         toast.error(response.message);
       } else {

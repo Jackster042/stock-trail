@@ -15,10 +15,36 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getWatchlistSymbolsByEmail } from "./watchlist.actions";
 
-// TODO: NOTE IF THIS DOESN'T WORK
-// const FINNHUB_BASE_URL = process.env.FINNHUB_BASE_URL ?? "";
-// const NEXT_PUBLIC_FINNHUB_API_KEY =
-//   process.env.NEXT_PUBLIC_FINNHUB_API_KEY ?? "";
+interface FinnhubProfile {
+  country?: string;
+  currency?: string;
+  exchange?: string;
+  finnhubIndustry?: string;
+  ipo?: string;
+  logo?: string;
+  marketCapitalization?: number;
+  name?: string;
+  phone?: string;
+  shareOutstanding?: number;
+  ticker?: string;
+  weburl?: string;
+}
+
+interface FinnhubSearchResponse {
+  count: number;
+  result: FinnhubSearchResult[];
+}
+
+interface FinnhubSearchResult {
+  description: string;
+  displaySymbol: string;
+  symbol: string;
+  type: string;
+}
+
+interface FinnhubSearchResultExtended extends FinnhubSearchResult {
+  __exchange?: string;
+}
 
 async function fetchJSON<T>(
   url: string,
@@ -54,7 +80,6 @@ export async function getNews(
 
     const maxArticles = 6;
 
-    // If we have symbols, try to fetch company news per symbol and round-robin select
     if (cleanSymbols.length > 0) {
       const perSymbolArticles: Record<string, RawNewsArticle[]> = {};
 
@@ -76,7 +101,6 @@ export async function getNews(
       );
 
       const collected: MarketNewsArticle[] = [];
-      // Round-robin up to 6 picks
       for (let round = 0; round < maxArticles; round++) {
         for (let i = 0; i < cleanSymbols.length; i++) {
           const sym = cleanSymbols[i];
@@ -91,14 +115,11 @@ export async function getNews(
       }
 
       if (collected.length > 0) {
-        // Sort by datetime desc
         collected.sort((a, b) => (b.datetime || 0) - (a.datetime || 0));
         return collected.slice(0, maxArticles);
       }
-      // If none collected, fall through to general news
     }
 
-    // General market news fallback or when no symbols provided
     const generalUrl = `${process.env.FINNHUB_BASE_URL}/news?category=general&token=${token}`;
     const general = await fetchJSON<RawNewsArticle[]>(generalUrl, 300);
 
@@ -110,7 +131,7 @@ export async function getNews(
       if (seen.has(key)) continue;
       seen.add(key);
       unique.push(art);
-      if (unique.length >= 20) break; // cap early before final slicing
+      if (unique.length >= 20) break;
     }
 
     const formatted = unique
@@ -149,7 +170,6 @@ export const searchStocks = cache(
       let results: FinnhubSearchResult[] = [];
 
       if (!trimmed) {
-        // Fetch top 10 popular symbols' profiles
         const top = POPULAR_STOCK_SYMBOLS.slice(0, 10);
         const profiles = await Promise.all(
           top.map(async (sym) => {
@@ -160,11 +180,11 @@ export const searchStocks = cache(
                 sym
               )}&token=${token}`;
               // Revalidate every hour
-              const profile = await fetchJSON<any>(url, 3600);
-              return { sym, profile } as { sym: string; profile: any };
+              const profile = await fetchJSON<FinnhubProfile>(url, 3600);
+              return { sym, profile };
             } catch (e) {
               console.error("Error fetching profile2 for", sym, e);
-              return { sym, profile: null } as { sym: string; profile: any };
+              return { sym, profile: null as FinnhubProfile | null };
             }
           })
         );
@@ -182,10 +202,8 @@ export const searchStocks = cache(
               displaySymbol: symbol,
               type: "Common Stock",
             };
-            // We don't include exchange in FinnhubSearchResult type, so carry via mapping later using profile
-            // To keep pipeline simple, attach exchange via closure map stage
-            // We'll reconstruct exchange when mapping to final type
-            (r as any).__exchange = exchange; // internal only
+
+            (r as FinnhubSearchResultExtended).__exchange = exchange;
             return r;
           })
           .filter((x): x is FinnhubSearchResult => Boolean(x));
@@ -201,9 +219,8 @@ export const searchStocks = cache(
         .map((r) => {
           const upper = (r.symbol || "").toUpperCase();
           const name = r.description || upper;
-          const exchangeFromProfile = (r as any).__exchange as
-            | string
-            | undefined;
+          const exchangeFromProfile = (r as FinnhubSearchResultExtended)
+            .__exchange as string | undefined;
           const exchange = exchangeFromProfile || "US";
           const type = r.type || "Stock";
           const item: StockWithWatchlistStatus = {

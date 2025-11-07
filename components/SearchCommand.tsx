@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { CommandDialog, CommandInput } from "./ui/command";
 import { CommandEmpty, CommandList } from "cmdk";
-import { Loader2, Star, TrendingUp } from "lucide-react";
+import { Loader2, TrendingUp } from "lucide-react";
 import { Button } from "./ui/button";
 import { useDebounce } from "@/hooks/useDebounce";
 import Link from "next/link";
@@ -42,7 +42,7 @@ export default function SearchCommand({
 
   useEffect(() => {
     debounceSearch();
-  }, [search]);
+  }, [search, debounceSearch]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -64,7 +64,7 @@ export default function SearchCommand({
         } catch {}
       })();
     }
-  }, [open]);
+  }, [open, search]);
 
   const handleSelectStock = () => {
     setOpen(false);

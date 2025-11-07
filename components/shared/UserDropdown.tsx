@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Avatar, AvatarFallback } from "../ui/avatar";
 import { LogOut } from "lucide-react";
 import NavItems from "./NavItems";
 import { signOut } from "@/lib/actions/auth.actions";
@@ -38,7 +38,6 @@ const UserDropdown = ({
           className="flex items-center gap-3 text-gray-400 hover:text-yellow-400"
         >
           <Avatar className="w-8 h-8">
-            {/* <AvatarImage src="https://github.com/shadcn.png" /> */}
             <AvatarFallback className="bg-yellow-500 text-yellow-900 text-sm font-bold">
               {user.name.charAt(0)}
             </AvatarFallback>
@@ -54,7 +53,6 @@ const UserDropdown = ({
         <DropdownMenuLabel>
           <div className="flex items-center gap-3 py-2 relative">
             <Avatar className="w-10 h-10">
-              {/* <AvatarImage src="https://github.com/shadcn.png" /> */}
               <AvatarFallback className="bg-yellow-500 text-yellow-900 text-sm font-bold">
                 {user.name.charAt(0)}
               </AvatarFallback>

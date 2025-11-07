@@ -9,7 +9,6 @@ const InputField = ({
   type = "text",
   placeholder,
   disabled,
-  value,
   register,
   validation,
   error,

@@ -1,11 +1,9 @@
 import "dotenv/config";
 import mongoose from "mongoose";
-import { log } from "util";
 
 async function main() {
   const uri = process.env.MONGODB_URI;
   if (!uri) {
-    console.log(`ERROR: Database connection failed!`);
     process.exit(1);
   }
 

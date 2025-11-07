@@ -7,7 +7,6 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { getStockDetails } from "./finnhub.actions";
-import { warn } from "console";
 
 export async function getWatchlistSymbolsByEmail(
   email: string
@@ -129,8 +128,6 @@ export const getWatchlistWithData = async () => {
       watchlist.map(async (item) => {
         try {
           const stockData = await getStockDetails(item.symbol);
-
-          console.table(stockData);
 
           if (!stockData) {
             console.warn(`Failed to fetch data for ${item.symbol}`);
