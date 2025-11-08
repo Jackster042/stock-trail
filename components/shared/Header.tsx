@@ -24,7 +24,9 @@ const Header = async ({ user }: { user: User }) => {
             height={32}
             className="h-8 w-auto rounded-full cursor-pointer"
           />
-          <span className="text-3xl font-medium">StockTrail</span>
+          <span className="text-3xl font-semibold text-gray-300 pb-1">
+            StockTrail
+          </span>
         </Link>
         <nav className="hidden sm:block">
           <NavItems initialStocks={initialStocks} />

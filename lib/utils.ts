@@ -25,7 +25,6 @@ export function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Formatted string like "$3.10T", "$900.00B", "$25.00M" or "$999,999.99"
 export function formatMarketCapValue(marketCapUsd: number): string {
   if (!Number.isFinite(marketCapUsd) || marketCapUsd <= 0) return "N/A";
 
@@ -45,7 +44,6 @@ export const getDateRange = (days: number) => {
   };
 };
 
-// Get today's date range (from today to today)
 export const getTodayDateRange = () => {
   const today = new Date();
   const todayString = today.toISOString().split("T")[0];
@@ -55,28 +53,25 @@ export const getTodayDateRange = () => {
   };
 };
 
-// Calculate news per symbol based on watchlist size
 export const calculateNewsDistribution = (symbolsCount: number) => {
   let itemsPerSymbol: number;
   let targetNewsCount = 6;
 
   if (symbolsCount < 3) {
-    itemsPerSymbol = 3; // Fewer symbols, more news each
+    itemsPerSymbol = 3;
   } else if (symbolsCount === 3) {
-    itemsPerSymbol = 2; // Exactly 3 symbols, 2 news each = 6 total
+    itemsPerSymbol = 2;
   } else {
-    itemsPerSymbol = 1; // Many symbols, 1 news each
-    targetNewsCount = 6; // Don't exceed 6 total
+    itemsPerSymbol = 1;
+    targetNewsCount = 6;
   }
 
   return { itemsPerSymbol, targetNewsCount };
 };
 
-// Check for required article fields
 export const validateArticle = (article: RawNewsArticle) =>
   article.headline && article.summary && article.url && article.datetime;
 
-// Get today's date string in YYYY-MM-DD format
 export const getTodayString = () => new Date().toISOString().split("T")[0];
 
 export const formatArticle = (
