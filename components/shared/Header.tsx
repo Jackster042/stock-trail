@@ -16,14 +16,15 @@ const Header = async ({ user }: { user: User }) => {
   return (
     <div className="sticky top-0 header">
       <div className="container header-wrapper">
-        <Link href="/">
+        <Link href="/" className="flex items-center gap-2">
           <Image
-            src="/assets/icons/logo.svg"
+            src="/assets/icons/logo2.png"
             alt="logo"
             width={140}
             height={32}
-            className="h-8 w-auto cursor-pointer"
+            className="h-8 w-auto rounded-full cursor-pointer"
           />
+          <span className="text-3xl font-medium">StockTrail</span>
         </Link>
         <nav className="hidden sm:block">
           <NavItems initialStocks={initialStocks} />

@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Stock Market App",
-  description: "Stock Market App",
+  title: "StockTrail",
+  description: "Track your favorite stocks and stay on top of market trends.",
 };
 
 export default function RootLayout({
@@ -33,7 +33,7 @@ export default function RootLayout({
           richColors
           toastOptions={{
             classNames: {
-              description: "text-gray-300", // apply globally to all descriptions
+              description: "text-gray-300",
             },
           }}
         />
