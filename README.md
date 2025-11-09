@@ -19,18 +19,6 @@
 
 **StockTrail** is a comprehensive stock market tracking platform that empowers users to monitor their favorite stocks, analyze market trends, and receive personalized market insights. Built with cutting-edge technologies, it combines real-time financial data with intelligent automation to deliver a seamless user experience.
 
-### 📸 Screenshots
-
-<div align="center">
-  <img src="public/screenshots/home.png" alt="Market Overview Dashboard" width="800"/>
-  <p><em>Market Overview Dashboard with real-time data visualization</em></p>
-  
-  <img src="public/screenshots/stock-details.png" alt="Stock Details Page" width="800"/>
-  <p><em>Detailed stock analysis with technical indicators</em></p>
-  
-  <img src="public/screenshots/watchlist.png" alt="Watchlist" width="800"/>
-  <p><em>Personalized watchlist with live price tracking</em></p>
-</div>
 
 ---
 
