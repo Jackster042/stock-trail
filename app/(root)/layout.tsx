@@ -1,4 +1,5 @@
 import Header from "@/components/shared/Header";
+import DemoBanner from "@/components/shared/DemoBanner";
 import { auth } from "@/lib/better-auth/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -18,6 +19,8 @@ const layout = async ({ children }: { children: React.ReactNode }) => {
   };
   return (
     <main className="min-h-screen text-gray-400">
+      {/* Demo Banner */}
+      <DemoBanner />
       {/* Header Component */}
       <Header user={user} />
       <div className="container py-10">{children}</div>
