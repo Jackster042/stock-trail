@@ -9,7 +9,7 @@
 
 **A modern, full-stack stock market tracking application with real-time data, personalized watchlists, and AI-powered email insights.**
 
-[Live Demo](#) • [Features](#-features) • [Tech Stack](#-tech-stack) • [Getting Started](#-getting-started)
+      [Features](#-features) • [Tech Stack](#-tech-stack) • [Getting Started](#-getting-started)
 
 </div>
 
@@ -208,7 +208,7 @@ stock_market_app/
 
 5. **Open your browser**
    
-   Navigate to [http://localhost:3000](http://localhost:3000)
+   Navigate to [http://localhost:3000]
 
 ---
 
@@ -323,30 +323,17 @@ npm run test:db
 
 ---
 
-## 🤝 Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
 ## 📄 License
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+MIT © 2025 [Nemanja Stojanovic](https://github.com/Jackster042)
 
 ---
 
 ## 👨‍💻 Author
 
 **Your Name**
-- GitHub: [@yourusername](https://github.com/yourusername)
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourprofile)
-- Portfolio: [yourportfolio.com](https://yourportfolio.com)
+- LinkedIn: TBA
+- Portfolio: TBA
 
 ---
 
