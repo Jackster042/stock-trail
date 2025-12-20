@@ -9,7 +9,6 @@
 
 **A modern, full-stack stock market tracking application with real-time data, personalized watchlists, and AI-powered email insights.**
 
-       • [Features](#-features) • [Tech Stack](#-tech-stack) • [Getting Started](#-getting-started)
 
 </div>
 
