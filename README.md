@@ -322,12 +322,6 @@ npm run test:db
 
 ---
 
-## 📄 License
-
-MIT © 2025 [Nemanja Stojanovic](https://github.com/Jackster042)
-
----
-
 ## 👨‍💻 Author
 
 **Your Name**
