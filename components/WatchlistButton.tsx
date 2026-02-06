@@ -5,6 +5,7 @@ import {
   removeFromWatchlist,
 } from "@/lib/actions/watchlist.actions";
 import { Star, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import React, { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -12,6 +13,7 @@ interface WatchlistButtonProps {
   symbol: string;
   company: string;
   isInWatchlist: boolean;
+  isAuthenticated?: boolean;
   showTrashIcon?: boolean;
   type?: "button" | "icon";
   onWatchlistChange?: (symbol: string, added: boolean) => void;
@@ -21,10 +23,12 @@ const WatchlistButton = ({
   symbol,
   company,
   isInWatchlist,
+  isAuthenticated = true,
   showTrashIcon = false,
   type = "button",
   onWatchlistChange,
 }: WatchlistButtonProps) => {
+  const router = useRouter();
   const [added, setAdded] = useState<boolean>(!!isInWatchlist);
 
   const label = useMemo(() => {
@@ -65,11 +69,20 @@ const WatchlistButton = ({
     }
   };
 
-  const debounceToggle = useDebounce(toggleWatchlist, 500);
+  const { debouncedFn: debounceToggle } = useDebounce(toggleWatchlist, 500);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+
+    // Redirect to sign-in if user is not authenticated
+    if (!isAuthenticated) {
+      toast.info("Sign in required", {
+        description: "Please sign in to add stocks to your watchlist",
+      });
+      router.push("/sign-in");
+      return;
+    }
 
     setAdded(!added);
     debounceToggle();

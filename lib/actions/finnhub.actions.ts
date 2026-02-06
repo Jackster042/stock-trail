@@ -148,11 +148,10 @@ export const searchStocks = cache(
   async (query?: string): Promise<StockWithWatchlistStatus[]> => {
     try {
       const session = await auth.api.getSession({ headers: await headers() });
-      if (!session?.user) redirect("/sign-in");
-
-      const userWatchlistSymbols = await getWatchlistSymbolsByEmail(
-        session.user.email
-      );
+      // Allow anonymous access - no redirect if not authenticated
+      const userWatchlistSymbols = session?.user
+        ? await getWatchlistSymbolsByEmail(session.user.email)
+        : [];
 
       const token =
         process.env.FINNHUB_API_KEY ?? process.env.NEXT_PUBLIC_FINNHUB_API_KEY;

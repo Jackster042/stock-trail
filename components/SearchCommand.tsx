@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { CommandDialog, CommandInput } from "./ui/command";
 import { CommandEmpty, CommandList } from "cmdk";
 import { Loader2, TrendingUp } from "lucide-react";
@@ -14,6 +14,7 @@ export default function SearchCommand({
   renderAs = "button",
   label = "Add stock",
   initialStocks,
+  isAuthenticated = true,
 }: SearchCommandProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -21,29 +22,59 @@ export default function SearchCommand({
   const [stocks, setStocks] = useState<StockWithWatchlistStatus[]>(
     initialStocks || []
   );
+  const hasSearchedRef = useRef(false);
 
   const isSearchMode = !!search.trim();
   const displayStocks = isSearchMode ? stocks : stocks?.slice(0, 10);
 
-  const handleSearch = async () => {
-    if (!search) return setStocks(initialStocks || []);
-
+  // Search function that fetches stocks
+  const performSearch = useCallback(async (query: string) => {
     setLoading(true);
     try {
-      const result = await searchStocks(search.trim());
+      const result = await searchStocks(query.trim());
       setStocks(result);
     } catch {
       setStocks([]);
     } finally {
       setLoading(false);
     }
-  };
-  const debounceSearch = useDebounce(handleSearch, 500);
+  }, []);
 
+  // Debounced search for when user is typing
+  const { debouncedFn: debouncedSearch, cancel: cancelDebounce } = useDebounce(
+    (query: string) => performSearch(query),
+    500
+  );
+
+  // Handle search input changes - only run when search text or open state changes
   useEffect(() => {
-    debounceSearch();
-  }, [search, debounceSearch]);
+    if (!open) {
+      hasSearchedRef.current = false;
+      return;
+    }
 
+    // Prevent duplicate searches for the same query
+    if (hasSearchedRef.current && !search.trim()) {
+      return;
+    }
+
+    if (!search.trim()) {
+      // Show initial/popular stocks when search is empty
+      hasSearchedRef.current = true;
+      performSearch("");
+    } else {
+      // Debounced search when user is typing
+      debouncedSearch(search);
+    }
+
+    // Cleanup: cancel pending debounced calls when search changes or component unmounts
+    return () => {
+      cancelDebounce();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, open]);
+
+  // Keyboard shortcut to open search
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.metaKey || (e.ctrlKey && e.key.toLowerCase() === "k")) {
@@ -54,17 +85,6 @@ export default function SearchCommand({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
-
-  useEffect(() => {
-    if (open) {
-      (async () => {
-        try {
-          const updated = await searchStocks(search.trim() || ""); // or pass empty for popular
-          setStocks(updated);
-        } catch {}
-      })();
-    }
-  }, [open, search]);
 
   const handleSelectStock = () => {
     setOpen(false);
@@ -141,6 +161,7 @@ export default function SearchCommand({
                       symbol={stock.symbol}
                       company={stock.name}
                       isInWatchlist={stock.isInWatchlist}
+                      isAuthenticated={isAuthenticated}
                       onWatchlistChange={handleWatchlistChange}
                       type="icon"
                     />

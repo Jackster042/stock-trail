@@ -2,7 +2,6 @@ import Header from "@/components/shared/Header";
 import DemoBanner from "@/components/shared/DemoBanner";
 import { auth } from "@/lib/better-auth/auth";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import React from "react";
 
 const layout = async ({ children }: { children: React.ReactNode }) => {
@@ -10,13 +9,15 @@ const layout = async ({ children }: { children: React.ReactNode }) => {
     headers: await headers(),
   });
 
-  if (!session?.user) redirect("/sign-in");
+  // Allow anonymous access - user is optional
+  const user = session?.user
+    ? {
+        id: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+      }
+    : null;
 
-  const user = {
-    id: session.user.id,
-    name: session.user.name,
-    email: session.user.email,
-  };
   return (
     <main className="min-h-screen text-gray-400">
       {/* Demo Banner */}

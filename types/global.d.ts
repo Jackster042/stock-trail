@@ -59,6 +59,7 @@ declare global {
     renderAs?: "button" | "text";
     label?: string;
     initialStocks: StockWithWatchlistStatus[];
+    isAuthenticated?: boolean;
   };
 
   type WelcomeEmailData = {
@@ -106,6 +107,7 @@ declare global {
     symbol: string;
     company: string;
     isInWatchlist: boolean;
+    isAuthenticated?: boolean;
     showTrashIcon?: boolean;
     type?: "button" | "icon";
     onWatchlistChange?: (symbol: string, isAdded: boolean) => void;

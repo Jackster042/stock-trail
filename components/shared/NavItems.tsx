@@ -8,8 +8,10 @@ import SearchCommand from "../SearchCommand";
 
 const NavItems = ({
   initialStocks,
+  isAuthenticated,
 }: {
   initialStocks: StockWithWatchlistStatus[];
+  isAuthenticated: boolean;
 }) => {
   const pathname = usePathname();
 
@@ -18,9 +20,18 @@ const NavItems = ({
     return pathname.startsWith(path);
   };
 
+  // Filter nav items based on authentication status
+  const visibleNavItems = navItems.filter((item) => {
+    // Always show Dashboard and Search
+    if (item.href === "/" || item.label === "Search") return true;
+    // Only show Watchlist for authenticated users
+    if (item.href === "/watchlist") return isAuthenticated;
+    return true;
+  });
+
   return (
     <ul className="flex flex-col gap-3 p-2 font-medium sm:gap-10 sm:flex-row">
-      {navItems.map(({ href, label }) => {
+      {visibleNavItems.map(({ href, label }) => {
         if (label === "Search")
           return (
             <li key="search-trigger">
@@ -28,6 +39,7 @@ const NavItems = ({
                 renderAs="text"
                 label="Search"
                 initialStocks={initialStocks}
+                isAuthenticated={isAuthenticated}
               />
             </li>
           );

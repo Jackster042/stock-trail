@@ -2,6 +2,8 @@ import TradingViewWidget from "@/components/TradingViewWidget";
 import WatchlistButton from "@/components/WatchlistButton";
 import { WatchListItem } from "@/database/models/watchlist.model";
 import { getUserWatchlist } from "@/lib/actions/watchlist.actions";
+import { auth } from "@/lib/better-auth/auth";
+import { headers } from "next/headers";
 import {
   BASELINE_WIDGET_CONFIG,
   CANDLE_CHART_WIDGET_CONFIG,
@@ -15,11 +17,24 @@ export default async function StockDetails({ params }: StockDetailsPageProps) {
   const { symbol } = await params;
   const scriptUrl = `https://s3.tradingview.com/external-embedding/embed-widget-`;
 
-  const watchlist = await getUserWatchlist();
+  // Check if user is authenticated
+  const session = await auth.api.getSession({ headers: await headers() });
+  const isAuthenticated = !!session?.user;
 
-  const isInWatchlist = watchlist.some(
-    (item: WatchListItem) => item.symbol === symbol.toUpperCase()
-  );
+  // Only fetch watchlist for authenticated users
+  let watchlist: WatchListItem[] = [];
+  let isInWatchlist = false;
+
+  if (isAuthenticated) {
+    try {
+      watchlist = await getUserWatchlist();
+      isInWatchlist = watchlist.some(
+        (item: WatchListItem) => item.symbol === symbol.toUpperCase()
+      );
+    } catch (error) {
+      console.error("Failed to fetch watchlist:", error);
+    }
+  }
 
   return (
     <div className="flex min-h-screen p-4 md:p-6 lg:p-8">
@@ -49,6 +64,7 @@ export default async function StockDetails({ params }: StockDetailsPageProps) {
               symbol={symbol.toUpperCase()}
               company={symbol.toUpperCase()}
               isInWatchlist={isInWatchlist}
+              isAuthenticated={isAuthenticated}
               type="button"
             />
           </div>
