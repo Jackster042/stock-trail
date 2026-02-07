@@ -29,8 +29,7 @@ export async function getWatchlistSymbolsByEmail(
     const items = await Watchlist.find({ userId }, { symbol: 1 }).lean();
 
     return items.map((item) => String(item.symbol));
-  } catch (error) {
-    console.error("Error fetching symbols", error);
+  } catch {
     return [];
   }
 }
@@ -66,8 +65,7 @@ export async function addToWatchlist(symbol: string, company: string) {
       success: true,
       message: "Stock added to watchlist",
     };
-  } catch (error) {
-    console.error("Error adding to watchlist", error);
+  } catch {
     throw new Error("Failed to add stock to watchlist");
   }
 }
@@ -88,8 +86,7 @@ export async function removeFromWatchlist(symbol: string) {
       success: true,
       message: "Stock removed from watchlist",
     };
-  } catch (error) {
-    console.error("Error deleting stock", error);
+  } catch {
     throw new Error("Failed to delete stock");
   }
 }
@@ -105,8 +102,7 @@ export async function getUserWatchlist() {
       .sort({ addedAt: -1 })
       .lean();
     return JSON.parse(JSON.stringify(watchlist));
-  } catch (error) {
-    console.error("Error fetching user watchlist", error);
+  } catch {
     throw new Error("Failed to fetch user watchlist");
   }
 }
@@ -130,7 +126,6 @@ export const getWatchlistWithData = async () => {
           const stockData = await getStockDetails(item.symbol);
 
           if (!stockData) {
-            console.warn(`Failed to fetch data for ${item.symbol}`);
             return item;
           }
           return {
@@ -143,16 +138,14 @@ export const getWatchlistWithData = async () => {
             marketCap: stockData.marketCapFormatted,
             peRatio: stockData.peRatio,
           };
-        } catch (error) {
-          console.warn(`Failed to fetch data for ${item.symbol}`, error);
+        } catch {
           return item;
         }
       })
     );
 
     return JSON.parse(JSON.stringify(stocksWithData));
-  } catch (error) {
-    console.error(`Error fetching watchlist data`, error);
+  } catch {
     throw new Error(`Failed to fetch watchlist data`);
   }
 };

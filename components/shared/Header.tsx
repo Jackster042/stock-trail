@@ -10,8 +10,8 @@ const Header = async ({ user }: { user: User | null }) => {
   let initialStocks: StockWithWatchlistStatus[] = [];
   try {
     initialStocks = await searchStocks();
-  } catch (error) {
-    console.error("Failed to fetch initial stocks:", error);
+  } catch {
+    // Silent fail - initialStocks remains empty array
   }
 
   return (

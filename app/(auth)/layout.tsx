@@ -1,7 +1,7 @@
 import { auth } from "@/lib/better-auth/auth";
 import { headers } from "next/headers";
-import Image from "next/image";
 import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import React from "react";
 import DemoBanner from "@/components/shared/DemoBanner";
@@ -18,13 +18,14 @@ const layout = async ({ children }: { children: React.ReactNode }) => {
         {/* Left Section */}
       <section className="auth-left-section scrollbar-hide-default">
         <Link href="/" className="auth-logo">
-          <Image
-            src="/assets/icons/logo.svg"
-            alt="logo"
-            width={140}
-            height={32}
-            className="h-8 w-auto"
-          />
+            <Image
+                src="/assets/icons/logo2.png"
+                alt="Logo"
+                width={32}
+                height={32}
+                className="w-8 h-8 rounded-2xl"
+            />
+            <span className="ml-2 text-xl font-bold text-gray-400">Stock Market</span>
         </Link>
         <div className="flex-1 pb-6 lg:pb-8">{children}</div>
 

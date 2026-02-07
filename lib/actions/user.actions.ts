@@ -23,8 +23,7 @@ export const getAllUsersForNewsEmail = async () => {
         email: user.email,
         name: user.name,
       }));
-  } catch (error) {
-    console.error("Error fetching users", error);
+  } catch {
     return [];
   }
 };

@@ -12,7 +12,6 @@ import {
 } from "../utils";
 import { auth } from "../better-auth/auth";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { getWatchlistSymbolsByEmail } from "./watchlist.actions";
 
 interface FinnhubProfile {
@@ -93,8 +92,7 @@ export async function getNews(
             }&to=${range.to}&token=${token}`;
             const articles = await fetchJSON<RawNewsArticle[]>(url, 300);
             perSymbolArticles[sym] = (articles || []).filter(validateArticle);
-          } catch (e) {
-            console.error("Error fetching company news for", sym, e);
+          } catch {
             perSymbolArticles[sym] = [];
           }
         })
@@ -138,8 +136,7 @@ export async function getNews(
       .slice(0, maxArticles)
       .map((a, idx) => formatArticle(a, false, undefined, idx));
     return formatted;
-  } catch (err) {
-    console.error("getNews error:", err);
+  } catch {
     throw new Error("Failed to fetch news");
   }
 }
@@ -156,11 +153,6 @@ export const searchStocks = cache(
       const token =
         process.env.FINNHUB_API_KEY ?? process.env.NEXT_PUBLIC_FINNHUB_API_KEY;
       if (!token) {
-        // If no token, log and return empty to avoid throwing per requirements
-        console.error(
-          "Error in stock search:",
-          new Error("FINNHUB API key is not configured")
-        );
         return [];
       }
 
@@ -181,8 +173,7 @@ export const searchStocks = cache(
               // Revalidate every hour
               const profile = await fetchJSON<FinnhubProfile>(url, 3600);
               return { sym, profile };
-            } catch (e) {
-              console.error("Error fetching profile2 for", sym, e);
+            } catch {
               return { sym, profile: null as FinnhubProfile | null };
             }
           })
@@ -236,8 +227,7 @@ export const searchStocks = cache(
         .slice(0, 15);
 
       return mapped;
-    } catch (err) {
-      console.error("Error in stock search:", err);
+   } catch {
       return [];
     }
   }
@@ -283,8 +273,7 @@ export const getStockDetails = cache(async (symbol: string) => {
         profileData?.marketCapitalization || 0
       ),
     };
-  } catch (error) {
-    console.error(`Error fetching stock details for ${cleanSymbol}:`, error);
+  } catch {
     throw new Error("Failed to fetch stock details");
   }
 });
