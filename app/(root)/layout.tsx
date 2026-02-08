@@ -1,13 +1,10 @@
 import Header from "@/components/shared/Header";
 import DemoBanner from "@/components/shared/DemoBanner";
-import { auth } from "@/lib/better-auth/auth";
-import { headers } from "next/headers";
+import { getCachedSession } from "@/lib/better-auth/get-session";
 import React from "react";
 
 const layout = async ({ children }: { children: React.ReactNode }) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getCachedSession();
 
   // Allow anonymous access - user is optional
   const user = session?.user

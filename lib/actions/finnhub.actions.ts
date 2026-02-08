@@ -13,6 +13,8 @@ import {
 import { auth } from "../better-auth/auth";
 import { headers } from "next/headers";
 import { getWatchlistSymbolsByEmail } from "./watchlist.actions";
+import { finnhubClient } from "../api/clients/finnhub.client";
+import { logger } from "../utils/logger";
 
 interface FinnhubProfile {
   country?: string;
@@ -45,34 +47,11 @@ interface FinnhubSearchResultExtended extends FinnhubSearchResult {
   __exchange?: string;
 }
 
-async function fetchJSON<T>(
-  url: string,
-  revalidateSeconds?: number
-): Promise<T> {
-  const options: RequestInit & { next?: { revalidate?: number } } =
-    revalidateSeconds
-      ? { cache: "force-cache", next: { revalidate: revalidateSeconds } }
-      : { cache: "no-store" };
-
-  const res = await fetch(url, options);
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Fetch failed ${res.status}: ${text}`);
-  }
-  return (await res.json()) as T;
-}
-
-export { fetchJSON };
-
 export async function getNews(
   symbols?: string[]
 ): Promise<MarketNewsArticle[]> {
   try {
     const range = getDateRange(5);
-    const token = process.env.NEXT_PUBLIC_FINNHUB_API_KEY;
-    if (!token) {
-      throw new Error("FINNHUB API key is not configured");
-    }
     const cleanSymbols = (symbols || [])
       .map((s) => s?.trim().toUpperCase())
       .filter((s): s is string => Boolean(s));
@@ -85,14 +64,16 @@ export async function getNews(
       await Promise.all(
         cleanSymbols.map(async (sym) => {
           try {
-            const url = `${
-              process.env.FINNHUB_BASE_URL
-            }/company-news?symbol=${encodeURIComponent(sym)}&from=${
-              range.from
-            }&to=${range.to}&token=${token}`;
-            const articles = await fetchJSON<RawNewsArticle[]>(url, 300);
+            const articles = await finnhubClient.getCompanyNews(
+              sym,
+              range.from,
+              range.to
+            );
             perSymbolArticles[sym] = (articles || []).filter(validateArticle);
-          } catch {
+          } catch (error) {
+            logger.error(`Failed to fetch news for ${sym}`, {
+              error: error instanceof Error ? error.message : "Unknown error",
+            });
             perSymbolArticles[sym] = [];
           }
         })
@@ -118,8 +99,7 @@ export async function getNews(
       }
     }
 
-    const generalUrl = `${process.env.FINNHUB_BASE_URL}/news?category=general&token=${token}`;
-    const general = await fetchJSON<RawNewsArticle[]>(generalUrl, 300);
+    const general = await finnhubClient.getGeneralNews();
 
     const seen = new Set<string>();
     const unique: RawNewsArticle[] = [];
@@ -136,7 +116,10 @@ export async function getNews(
       .slice(0, maxArticles)
       .map((a, idx) => formatArticle(a, false, undefined, idx));
     return formatted;
-  } catch {
+  } catch (error) {
+    logger.error("Failed to fetch news", {
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
     throw new Error("Failed to fetch news");
   }
 }
@@ -150,30 +133,23 @@ export const searchStocks = cache(
         ? await getWatchlistSymbolsByEmail(session.user.email)
         : [];
 
-      const token =
-        process.env.FINNHUB_API_KEY ?? process.env.NEXT_PUBLIC_FINNHUB_API_KEY;
-      if (!token) {
-        return [];
-      }
-
       const trimmed = typeof query === "string" ? query.trim() : "";
 
       let results: FinnhubSearchResult[] = [];
 
       if (!trimmed) {
-        const top = POPULAR_STOCK_SYMBOLS.slice(0, 10);
+        // Reduce to 5 stocks to stay under rate limit (60 calls/minute on free tier)
+        // This leaves room for other API calls (quotes, financials, etc.)
+        const top = POPULAR_STOCK_SYMBOLS.slice(0, 5);
         const profiles = await Promise.all(
           top.map(async (sym) => {
             try {
-              const url = `${
-                process.env.FINNHUB_BASE_URL
-              }/stock/profile2?symbol=${encodeURIComponent(
-                sym
-              )}&token=${token}`;
-              // Revalidate every hour
-              const profile = await fetchJSON<FinnhubProfile>(url, 3600);
+              const profile = await finnhubClient.getProfile(sym);
               return { sym, profile };
-            } catch {
+            } catch (error) {
+              logger.error(`Failed to fetch profile for ${sym}`, {
+                error: error instanceof Error ? error.message : "Unknown error",
+              });
               return { sym, profile: null as FinnhubProfile | null };
             }
           })
@@ -198,10 +174,7 @@ export const searchStocks = cache(
           })
           .filter((x): x is FinnhubSearchResult => Boolean(x));
       } else {
-        const url = `${
-          process.env.FINNHUB_BASE_URL
-        }/search?q=${encodeURIComponent(trimmed)}&token=${token}`;
-        const data = await fetchJSON<FinnhubSearchResponse>(url, 1800);
+        const data = await finnhubClient.search(trimmed);
         results = Array.isArray(data?.result) ? data.result : [];
       }
 
@@ -227,7 +200,10 @@ export const searchStocks = cache(
         .slice(0, 15);
 
       return mapped;
-   } catch {
+   } catch (error) {
+      logger.error("Failed to search stocks", {
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
       return [];
     }
   }
@@ -238,17 +214,9 @@ export const getStockDetails = cache(async (symbol: string) => {
 
   try {
     const [quote, profile, financials] = await Promise.all([
-      fetchJSON(
-        `${process.env.FINNHUB_BASE_URL}/quote?symbol=${cleanSymbol}&token=${process.env.NEXT_PUBLIC_FINNHUB_API_KEY}`
-      ),
-      fetchJSON(
-        `${process.env.FINNHUB_BASE_URL}/stock/profile2?symbol=${cleanSymbol}&token=${process.env.NEXT_PUBLIC_FINNHUB_API_KEY}`,
-        3600
-      ),
-      fetchJSON(
-        `${process.env.FINNHUB_BASE_URL}/stock/metric?symbol=${cleanSymbol}&metric=all&token=${process.env.NEXT_PUBLIC_FINNHUB_API_KEY}`,
-        1800
-      ),
+      finnhubClient.getQuote(cleanSymbol),
+      finnhubClient.getProfile(cleanSymbol),
+      finnhubClient.getFinancials(cleanSymbol),
     ]);
 
     const quoteData = quote as QuoteData;
@@ -273,7 +241,11 @@ export const getStockDetails = cache(async (symbol: string) => {
         profileData?.marketCapitalization || 0
       ),
     };
-  } catch {
+  } catch (error) {
+    logger.error("Failed to fetch stock details", {
+      symbol: cleanSymbol,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
     throw new Error("Failed to fetch stock details");
   }
 });

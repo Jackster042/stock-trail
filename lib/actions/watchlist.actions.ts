@@ -4,9 +4,12 @@ import { Watchlist } from "@/database/models/watchlist.model";
 import { dbConnect } from "@/database/mongoose";
 import { auth } from "../better-auth/auth";
 import { redirect } from "next/navigation";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { getStockDetails } from "./finnhub.actions";
+import { watchlistRepository } from "../repositories/watchlist.repository";
+import { logger } from "../utils/logger";
 
 export async function getWatchlistSymbolsByEmail(
   email: string
@@ -36,15 +39,13 @@ export async function getWatchlistSymbolsByEmail(
 
 export async function addToWatchlist(symbol: string, company: string) {
   try {
-    await dbConnect();
-
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) redirect("/sign-in");
 
-    const existingItem = await Watchlist.findOne({
-      userId: session?.user.id,
-      symbol: symbol.toUpperCase(),
-    });
+    const existingItem = await watchlistRepository.findByUserIdAndSymbol(
+      session.user.id,
+      symbol
+    );
 
     if (existingItem) {
       return {
@@ -53,70 +54,76 @@ export async function addToWatchlist(symbol: string, company: string) {
       };
     }
 
-    const newItem = new Watchlist({
+    await watchlistRepository.create({
       userId: session.user.id,
       symbol: symbol.toUpperCase(),
       company,
     });
 
-    await newItem.save();
     revalidatePath("/watchlist");
     return {
       success: true,
       message: "Stock added to watchlist",
     };
-  } catch {
+  } catch (error) {
+    if (isRedirectError(error)) throw error;
+    logger.error("Failed to add stock to watchlist", {
+      symbol,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
     throw new Error("Failed to add stock to watchlist");
   }
 }
 
 export async function removeFromWatchlist(symbol: string) {
   try {
-    await dbConnect();
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) redirect("/sign-in");
 
-    await Watchlist.deleteOne({
-      userId: session?.user.id,
-      symbol: symbol.toUpperCase(),
-    });
+    await watchlistRepository.delete(session.user.id, symbol);
     revalidatePath("/watchlist");
 
     return {
       success: true,
       message: "Stock removed from watchlist",
     };
-  } catch {
+  } catch (error) {
+    if (isRedirectError(error)) throw error;
+    logger.error("Failed to remove stock from watchlist", {
+      symbol,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
     throw new Error("Failed to delete stock");
   }
 }
 
 export async function getUserWatchlist() {
+  let session = null;
   try {
-    await dbConnect();
-
-    const session = await auth.api.getSession({ headers: await headers() });
+    session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) redirect("/sign-in");
 
-    const watchlist = await Watchlist.find({ userId: session?.user.id })
-      .sort({ addedAt: -1 })
-      .lean();
+    const watchlist = await watchlistRepository.findByUserId(session.user.id);
     return JSON.parse(JSON.stringify(watchlist));
-  } catch {
+  } catch (error) {
+    if (isRedirectError(error)) throw error;
+    logger.error("Failed to fetch user watchlist", {
+      userId: session?.user?.id,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
     throw new Error("Failed to fetch user watchlist");
   }
 }
 
 export const getWatchlistWithData = async () => {
+  // Capture userId early so it's available in the error handler without a redundant session call
+  let userId: string | undefined;
   try {
-    await dbConnect();
-
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) redirect("/sign-in");
+    userId = session.user.id;
 
-    const watchlist = await Watchlist.find({ userId: session.user.id })
-      .sort({ addedAt: -1 })
-      .lean();
+    const watchlist = await watchlistRepository.findByUserId(userId);
 
     if (watchlist.length === 0) return [];
 
@@ -138,14 +145,23 @@ export const getWatchlistWithData = async () => {
             marketCap: stockData.marketCapFormatted,
             peRatio: stockData.peRatio,
           };
-        } catch {
+        } catch (error) {
+          logger.error(`Failed to fetch data for ${item.symbol}`, {
+            symbol: item.symbol,
+            error: error instanceof Error ? error.message : "Unknown error",
+          });
           return item;
         }
       })
     );
 
     return JSON.parse(JSON.stringify(stocksWithData));
-  } catch {
-    throw new Error(`Failed to fetch watchlist data`);
+  } catch (error) {
+    if (isRedirectError(error)) throw error;
+    logger.error("Failed to fetch watchlist with data", {
+      userId,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+    throw new Error("Failed to fetch watchlist data");
   }
 };

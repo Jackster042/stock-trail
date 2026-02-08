@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { ReactQueryProvider } from "@/lib/providers/react-query-provider";
 import "./globals.css";
 
 const inter = Inter({
@@ -30,15 +31,17 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${spaceGrotesk.variable} font-sans antialiased`}
       >
-        {children}
-        <Toaster
-          richColors
-          toastOptions={{
-            classNames: {
-              description: "text-gray-300",
-            },
-          }}
-        />
+        <ReactQueryProvider>
+          {children}
+          <Toaster
+            richColors
+            toastOptions={{
+              classNames: {
+                description: "text-gray-300",
+              },
+            }}
+          />
+        </ReactQueryProvider>
       </body>
     </html>
   );

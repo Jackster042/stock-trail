@@ -1,9 +1,8 @@
 "use client";
-import { useDebounce } from "@/hooks/useDebounce";
 import {
-  addToWatchlist,
-  removeFromWatchlist,
-} from "@/lib/actions/watchlist.actions";
+  useAddToWatchlist,
+  useRemoveFromWatchlist,
+} from "@/lib/hooks/use-watchlist";
 import { Star, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useMemo, useState } from "react";
@@ -31,46 +30,17 @@ const WatchlistButton = ({
   const router = useRouter();
   const [added, setAdded] = useState<boolean>(!!isInWatchlist);
 
+  // Use React Query mutations
+  const addMutation = useAddToWatchlist();
+  const removeMutation = useRemoveFromWatchlist();
+  const isPending = addMutation.isPending || removeMutation.isPending;
+
   const label = useMemo(() => {
     if (type === "icon") return added ? "" : "";
     return added ? "Remove from Watchlist" : "Add to Watchlist";
   }, [added, type]);
 
-  const toggleWatchlist = async () => {
-    const prev = added;
-    const next = !prev;
-
-    try {
-      const result = prev
-        ? await removeFromWatchlist(symbol)
-        : await addToWatchlist(symbol, company);
-
-      if (!result.success) {
-        setAdded(prev);
-        toast.error(result.message ?? "Unable to update watchlist");
-        return;
-      }
-
-      if (prev) {
-        toast.error("Stock removed from watchlist", {
-          description: `${company} ${"removed"} from watchlist`,
-        });
-      } else {
-        toast.success("Stock added to watchlist", {
-          description: `${company} ${"added"} to watchlist`,
-        });
-      }
-
-      onWatchlistChange?.(symbol, next);
-    } catch (error) {
-      setAdded(prev);
-      toast.error("Unable to update watchlist", { description: String(error) });
-    }
-  };
-
-  const { debouncedFn: debounceToggle } = useDebounce(toggleWatchlist, 500);
-
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
 
@@ -83,8 +53,41 @@ const WatchlistButton = ({
       return;
     }
 
-    setAdded(!added);
-    debounceToggle();
+    // Prevent double-clicks while mutation is in flight
+    if (isPending) return;
+
+    const prev = added;
+    const next = !prev;
+
+    // Optimistic update
+    setAdded(next);
+
+    try {
+      const result = prev
+        ? await removeMutation.mutateAsync(symbol)
+        : await addMutation.mutateAsync({ symbol, company });
+
+      if (!result.success) {
+        setAdded(prev);
+        toast.error(result.message ?? "Unable to update watchlist");
+        return;
+      }
+
+      if (prev) {
+        toast.error("Stock removed from watchlist", {
+          description: `${company} removed from watchlist`,
+        });
+      } else {
+        toast.success("Stock added to watchlist", {
+          description: `${company} added to watchlist`,
+        });
+      }
+
+      onWatchlistChange?.(symbol, next);
+    } catch (error) {
+      setAdded(prev);
+      toast.error("Unable to update watchlist", { description: String(error) });
+    }
   };
 
   if (type === "icon") {
@@ -102,6 +105,7 @@ const WatchlistButton = ({
         }
         className={`watchlist-icon-btn ${added ? "watchlist-icon-added" : ""}`}
         onClick={handleClick}
+        disabled={isPending}
       >
         <Star fill={added ? "currentColor" : "none"} />
       </button>
@@ -112,6 +116,7 @@ const WatchlistButton = ({
     <button
       className={`watchlist-btn ${added ? "watchlist-remove" : ""}`}
       onClick={handleClick}
+      disabled={isPending}
     >
       {showTrashIcon && added ? <Trash2 /> : null}
       <span>{label}</span>

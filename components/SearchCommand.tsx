@@ -7,7 +7,7 @@ import { Loader2, TrendingUp } from "lucide-react";
 import { Button } from "./ui/button";
 import { useDebounce } from "@/hooks/useDebounce";
 import Link from "next/link";
-import { searchStocks } from "@/lib/actions/finnhub.actions";
+import { usePopularStocks, useSearchStocks } from "@/lib/hooks/use-search-stocks";
 import WatchlistButton from "./WatchlistButton";
 
 export default function SearchCommand({
@@ -18,61 +18,58 @@ export default function SearchCommand({
 }: SearchCommandProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [stocks, setStocks] = useState<StockWithWatchlistStatus[]>(
-    initialStocks || []
-  );
-  const hasSearchedRef = useRef(false);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
 
-  const isSearchMode = !!search.trim();
-  const displayStocks = isSearchMode ? stocks : stocks?.slice(0, 10);
+  // Local override state for watchlist status changes within the dialog
+  const [watchlistOverrides, setWatchlistOverrides] = useState<
+    Record<string, boolean>
+  >({});
 
-  // Search function that fetches stocks
-  const performSearch = useCallback(async (query: string) => {
-    setLoading(true);
-    try {
-      const result = await searchStocks(query.trim());
-      setStocks(result);
-    } catch {
-      setStocks([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Use React Query hooks instead of direct server action calls
+  const isSearchMode = !!debouncedQuery.trim();
+  const {
+    data: popularStocks,
+    isLoading: isLoadingPopular,
+  } = usePopularStocks(open && !isSearchMode);
 
-  // Debounced search for when user is typing
-  const { debouncedFn: debouncedSearch, cancel: cancelDebounce } = useDebounce(
-    (query: string) => performSearch(query),
+  const {
+    data: searchResults,
+    isLoading: isLoadingSearch,
+  } = useSearchStocks(debouncedQuery, open && isSearchMode);
+
+  // Debounce search input
+  const { debouncedFn: debouncedSetQuery, cancel: cancelDebounce } = useDebounce(
+    (query: string) => setDebouncedQuery(query),
     500
   );
 
-  // Handle search input changes - only run when search text or open state changes
+  // Handle search input changes
   useEffect(() => {
     if (!open) {
-      hasSearchedRef.current = false;
-      return;
-    }
-
-    // Prevent duplicate searches for the same query
-    if (hasSearchedRef.current && !search.trim()) {
       return;
     }
 
     if (!search.trim()) {
-      // Show initial/popular stocks when search is empty
-      hasSearchedRef.current = true;
-      performSearch("");
+      setDebouncedQuery("");
+      cancelDebounce();
     } else {
-      // Debounced search when user is typing
-      debouncedSearch(search);
+      debouncedSetQuery(search.trim());
     }
 
-    // Cleanup: cancel pending debounced calls when search changes or component unmounts
     return () => {
       cancelDebounce();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, open]);
+
+  // Reset state when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setSearch("");
+      setDebouncedQuery("");
+      setWatchlistOverrides({});
+    }
+  }, [open]);
 
   // Keyboard shortcut to open search
   useEffect(() => {
@@ -86,20 +83,26 @@ export default function SearchCommand({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  const loading = isSearchMode ? isLoadingSearch : isLoadingPopular;
+
+  // Determine which stocks to display, applying any watchlist overrides
+  const rawStocks = isSearchMode
+    ? searchResults
+    : popularStocks ?? initialStocks;
+  const displayStocks = rawStocks
+    ?.map((stock) => ({
+      ...stock,
+      isInWatchlist:
+        watchlistOverrides[stock.symbol] ?? stock.isInWatchlist,
+    }))
+    .slice(0, isSearchMode ? undefined : 10);
+
   const handleSelectStock = () => {
     setOpen(false);
-    setSearch("");
-    setStocks(initialStocks || []);
   };
 
-  const handleWatchlistChange = async (symbol: string, isAdded: boolean) => {
-    setStocks(
-      initialStocks?.map((stock) =>
-        stock.symbol === symbol
-          ? { ...stock, isInWatchlist: isAdded }
-          : stock || []
-      )
-    );
+  const handleWatchlistChange = (symbol: string, isAdded: boolean) => {
+    setWatchlistOverrides((prev) => ({ ...prev, [symbol]: isAdded }));
   };
 
   return (
@@ -144,7 +147,10 @@ export default function SearchCommand({
                 {` `}({displayStocks?.length || 0})
               </div>
               {displayStocks?.map((stock, i) => (
-                <li key={`${stock.symbol}-${i}`} className="search-item">
+                <li
+                  key={`${stock.symbol}-${i}`}
+                  className="search-item"
+                >
                   <Link
                     href={`/stocks/${stock.symbol}`}
                     onClick={handleSelectStock}
